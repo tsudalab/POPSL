@@ -1,0 +1,12 @@
+train:
+  problem: 're5'
+  epochs: 30
+  batch_size: 8
+  lr: 0.001
+  in_dim: 3
+  out_dim: 4
+  num_bs: 5
+
+output:
+  save: True
+  dir: 'checkpoints/'
