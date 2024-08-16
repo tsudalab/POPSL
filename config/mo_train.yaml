@@ -1,11 +1,19 @@
 train:
-  problem: 're5'
-  epochs: 30
-  batch_size: 8
-  lr: 0.001
-  in_dim: 3
-  out_dim: 4
-  num_bs: 5
+  problem: 're5' #problem name
+  epochs: 20 # iteration number setting n_iteration = epochs / num_iter
+  num_iter: 2
+  n_run: 5 # experiment number
+  batch_size: 8 # batch size number 
+  lr: 0.001 # learning rate
+  in_dim: 3 # the number of objectives for your problem
+  out_dim: 4 # the dimension of variables for your problem
+  num_init: 20 # init sample
+  num_bs: 10 # sample number in batch selection 
+  save_path: 'result' # result save path  
+
+model:
+  rho: 5 # rho for PBI
+  lmd: 1 # lambda for penalty item
 
 output:
   save: True

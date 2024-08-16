@@ -76,23 +76,18 @@ def dcem(
         assert ub > lb
 
     time_s = datetime.datetime.now()
-    y_gt_new = y_gt
-    # print('initial: ', mu.shape)
-    # mu = F.softmax(mu, dim=-1)
-    alpha = torch.ones(size)
+
     for i in range(n_iter):
-        # print('alpha: ', alpha)
-        # X = Dirichlet(alpha).rsample((n_sample, )).transpose(0, 1).to(device)
-        X = Normal(mu, sigma).rsample((n_sample,)).transpose(0, 1).to(device)
-        # print('X shape: ', X.shape)
-        #  Scale to 1
+       
+        X = Normal(mu, sigma).rsample((n_sample,)).transpose(0, 1).to(device) 
+        
         mu = mu.unsqueeze(1).repeat(1, X.shape[1], 1)
         sigma = sigma.unsqueeze(1).repeat(1, X.shape[1], 1)
         l_bound = mu - 3.5 * sigma
         r_bound = mu + 3.5 * sigma
         X = (X - l_bound) / (r_bound - l_bound)
         X = X / torch.sum(X, dim=-1).unsqueeze(-1)
-        # print('X shape: ', X)
+        X = X + 0.5 * torch.randn(X.size()).to(device) 
         
         X = X.contiguous()
         if lb is not None or ub is not None:
@@ -102,8 +97,6 @@ def dcem(
             X = proj_iterate_cb(X)
 
         fX, inputs, objs = f(X.squeeze(), y_gt)
-        # print('shape==========:', X.shape, fX.shape)
-        # X, fX = X.view(1, n_sample, -1), fX.view(1, n_sample) # fX.view(n_batch, n_sample)
         X, fX = X.view(n_batch, n_sample, -1), fX.view(n_batch, n_sample)
 
         if temp is not None and temp < np.infty:
@@ -132,19 +125,20 @@ def dcem(
 
         assert I.shape[:2] == X.shape[:2]
         X_I = I * X
-        I_vals = fX.unsqueeze(-1).argsort(dim=1)[:, :n_elite]
-        # print(torch.sort(fX, dim=1)[0][:, :100], fX.shape)
-        I_mask = torch.zeros(I.shape[0], n_elite, I.shape[1]).to(device)
-        I_mask.scatter_(-1, I_vals, 1)
-        eilites = torch.bmm(I_mask, torch.softmax(I, dim=-1)*X) 
-        # eilites = eilites + 0.9 * (torch.randn_like(eilites) + 3.) / 6.
-        # eilites = torch.bmm(I_mask, X)
-        # print('=================test tmp shape: ', eilites)
+        
         
         objs_I = I * objs
         old_mu = mu.clone().mean(dim=1)
         mu = torch.sum(X_I, dim=1) / n_elite
         sigma = ((I * (X - mu.unsqueeze(1))**2).sum(dim=1) / n_elite).sqrt()
+        # alpha = torch.exp(mu+sigma)
+        
+        I_vals = fX.unsqueeze(-1).argsort(dim=1)[:, :n_elite]
+        # print(torch.sort(fX, dim=1)[0][:, :100], fX.shape)
+        I_mask = torch.zeros(I.shape[0], n_elite, I.shape[1]).to(device)
+        I_mask.scatter_(-1, I_vals, 1)
+        eilites = torch.bmm(I_mask, torch.softmax(I, dim=-1)*X) 
+        
         # print('old mu: ', old_mu.shape, mu.shape)
         if (mu - old_mu).norm() < iter_eps:
             break
