@@ -62,6 +62,13 @@ train.py --- main execution file for PO-PSL.
   pip install -r requirements.txt
   ```
 
+- Install the lml:
+
+  ```
+  cd lml-master
+  python setup.py install
+  ```
+
 
 ## Getting Started
 
@@ -73,7 +80,7 @@ Run the train file with python with specified arguments:
 python train.py train.problem='re5' train.save_path='result' train.num_bs=10 train.batch_size=8 model.rho=5 model.lamda=1
 ```
 
-If you don't understand the meaning of the arguments, please see *config/config.py*.
+If you don't understand the meaning of the arguments, please see *config/mo_train.yaml*.
 
 ## Result
 
@@ -89,7 +96,7 @@ Then, under that folder, the name of csv files would be:
 y-{n_iteration}-{n_run}.csv
 ```
 
-The name of the argument yaml file is `mo_train.yml`.
+The name of the argument yaml file is `mo_train.yaml`.
 
 *Explanation --- problem: problem name, n_iteration: iteration ID, n_run: experiment ID*
 
@@ -126,4 +133,15 @@ For more examples of predefined optimization problems, please refer to `net/prob
 
 If you find our repository helpful to your research, please cite our paper:
 
-...
+```
+@misc{haishan2024preferenceoptimizedparetosetlearning,
+      title={Preference-Optimized Pareto Set Learning for Blackbox Optimization}, 
+      author={Zhang Haishan and Diptesh Das and Koji Tsuda},
+      year={2024},
+      eprint={2408.09976},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2408.09976}, 
+}
+
+```

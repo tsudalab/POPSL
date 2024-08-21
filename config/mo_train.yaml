@@ -7,14 +7,18 @@ train:
   lr: 0.001 # learning rate
   in_dim: 3 # the number of objectives for your problem
   out_dim: 4 # the dimension of variables for your problem
-  num_init: 20 # init sample
-  num_bs: 10 # sample number in batch selection 
+  num_init: 10 # init sample
+  num_bs: 5 # sample number in batch selection 
   save_path: 'result' # result save path  
 
 model:
-  rho: 5 # rho for PBI
+  rho: 5  # rho for PBI
   lmd: 1 # lambda for penalty item
+  r_ideal: -0.1 # ideal value for reference point
+  lb_ideal: -0.1 # ideal range setting for reference point
+  rb_ideal: 1.0 # ideal range setting for reference point
 
 output:
+  norm_per: 0.
   save: True
   dir: 'checkpoints/'

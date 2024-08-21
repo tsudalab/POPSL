@@ -36,6 +36,7 @@ class DCEM(torch.nn.Module):
         self.model_gp = model_gp
         
         self.rho = cfg.model.rho
+        self.norm_per = cfg.output.norm_per
         
 
         self.exp_dir = os.getcwd()
@@ -87,6 +88,7 @@ class DCEM(torch.nn.Module):
             normalize=True,
             gt=property,
             epoch=epoch,
+            norm_per=self.norm_per,
             y_gt=y_gt,
         )
         _, x_pred, y_pred = self.re_func_chem(w_pred.unsqueeze(1), y_gt)

@@ -41,6 +41,10 @@ def train_net(device, cfg):
     
     rho = cfg.model.rho
     lmd = cfg.model.lmd
+    ri = cfg.model.r_ideal
+    lb = cfg.model.lb_ideal
+    rb = cfg.model.rb_ideal
+    
   
 
     logging.info(f'''Starting training:
@@ -72,9 +76,9 @@ def train_net(device, cfg):
         model_time_list = []
         for epoch in range(epochs):
             time_s = datetime.datetime.now()
-            d_item = 0.1 * np.ones((batch_size*n_obj, n_obj)) # np.random.uniform(0, 1, (batch_size*n_obj, n_obj))
+            d_item = ri * np.ones((batch_size*n_obj, n_obj)) # np.random.uniform(0, 1, (batch_size*n_obj, n_obj))
             for n_o in range(n_obj):
-                d_item[(n_o * batch_size): ((n_o + 1) * batch_size), n_o] = np.random.uniform(0.1, 0.9, batch_size) # 0
+                d_item[(n_o * batch_size): ((n_o + 1) * batch_size), n_o] = np.random.uniform(lb, rb, batch_size) # 0
             d_item = torch.Tensor(d_item).to(device)
             y_pred, w_pred, _ = net(epoch, d_item, 'train')
             
@@ -85,7 +89,7 @@ def train_net(device, cfg):
             d1, d2 = PBI_cal(d_item, w_pred, y_pred)
             
             pty_item = penalty_item((y_pred - y_best + 1e-6), (d_item.unsqueeze(1) - y_best))
-            constraint_1 = (torch.sqrt(torch.tensor(2.0)) / 2. - pty_item).squeeze()
+            constraint_1 = (-pty_item).squeeze() # (torch.sqrt(torch.tensor(2.0)) / 2. - pty_item).squeeze()
             constrain_2 = (pty_item - 1).squeeze()
             
             loss = d1 + rho * d2 - lmd * torch.exp(constraint_1 * constrain_2) # + 1 * torch.norm(y_pred, p=2)
@@ -104,7 +108,7 @@ def train_net(device, cfg):
             prefs, x_pred, y_pred = evaluate(net, device, cfg.train, (epoch // num_iter), run_num)
             
             # batch selection
-            x_sel, y_sel = paretoset_sel(d_item, prefs, x_pred, y_pred, y_best, net, num_bs)
+            x_sel, y_sel = paretoset_sel(d_item, prefs, x_pred, y_pred, y_best, net, num_bs, rho, lmd)
             x_new = torch.vstack((x_new, x_sel))
             y_new = torch.vstack((y_new, y_sel.to(device)))
             net_pre.fit(x_new, y_new)
@@ -126,7 +130,7 @@ def PBI_cal(d_item, w_pred, y_pred):
     d2 = torch.linalg.norm(y_F - (d1.unsqueeze(-1) * w_pred) / w_norm.unsqueeze(-1), dim=-1)
     return d1, d2
 
-def paretoset_sel(d_item, prefs, x_pred, y_pred, y_best, net, num_bs):
+def paretoset_sel(d_item, prefs, x_pred, y_pred, y_best, net, num_bs, rho, lmd):
     net.eval()
     n_ref = d_item.shape[0]
     n_spl = int(np.ceil(num_bs/n_ref)) + 2
@@ -138,18 +142,18 @@ def paretoset_sel(d_item, prefs, x_pred, y_pred, y_best, net, num_bs):
         pty_item = penalty_item((y_sel - y_best + 1e-6), (d_item.unsqueeze(1) - y_best))
         constraint_1 = (torch.sqrt(torch.tensor(2.0)) / 2. - pty_item).squeeze() # (0 - pty_item).squeeze()
         constrain_2 = (pty_item - 1).squeeze()
-        scores = d1 + 10 * d2 - 0.1 * torch.exp(constraint_1 * constrain_2)
+        scores = d1 + rho * d2 - lmd * torch.exp(constraint_1 * constrain_2)
         idx_sub = torch.argsort(scores, dim=1)[:, :n_spl]
         idx_sub = idx_sub.cpu().detach().numpy()
         uq_idx, uq_iidx = np.unique(idx_sub, return_index=True)
-        idx = np.random.choice(len(uq_idx), num_bs, replace=True)
+        idx = np.random.choice(len(uq_idx), num_bs, replace=False)
         x_sel = x_pred.squeeze()[idx, :]
         y_sel = y_pred[idx, :]
         assert x_sel.shape[0] == y_sel.shape[0] and y_sel.shape[1] == d_item.shape[-1]
 
     return x_sel, torch.Tensor(y_sel)          
 
-def add_perturbation_to_parameters(model, perturbation_std=0.1):
+def add_perturbation_to_parameters(model, perturbation_std=0.15):
     with torch.no_grad():
         for param in model.parameters():
             # param.add_(torch.randn_like(param) * perturbation_std)

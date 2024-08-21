@@ -34,6 +34,7 @@ def dcem(
     normalize=True,
     iter_eps=1e-4,
     epoch=1,
+    norm_per=0,
     y_gt=None,
 ):
     if init_mu is None:
@@ -87,7 +88,7 @@ def dcem(
         r_bound = mu + 3.5 * sigma
         X = (X - l_bound) / (r_bound - l_bound)
         X = X / torch.sum(X, dim=-1).unsqueeze(-1)
-        X = X + 0.5 * torch.randn(X.size()).to(device) 
+        X = X + norm_per * torch.randn(X.size()).to(device) 
         
         X = X.contiguous()
         if lb is not None or ub is not None:
