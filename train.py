@@ -57,7 +57,7 @@ def train_net(device, cfg):
     # training 
     torch.autograd.set_detect_anomaly(True)
     for run_num in range(n_run):
-        setup_seed(10*run_num)
+        setup_seed(10*(run_num+1))
 
         x_init = torch.from_numpy(np.random.uniform(0, 1, (num_init, n_var))).to(torch.float32).to(device)
         F1 = get_problem(cfg.train.problem)
@@ -89,7 +89,7 @@ def train_net(device, cfg):
             d1, d2 = PBI_cal(d_item, w_pred, y_pred)
             
             pty_item = penalty_item((y_pred - y_best + 1e-6), (d_item.unsqueeze(1) - y_best))
-            constraint_1 = (-pty_item).squeeze() # (torch.sqrt(torch.tensor(2.0)) / 2. - pty_item).squeeze()
+            constraint_1 = (torch.sqrt(torch.tensor(2.0)) / 2. - pty_item).squeeze() # (-pty_item).squeeze() different penalty setting
             constrain_2 = (pty_item - 1).squeeze()
             
             loss = d1 + rho * d2 - lmd * torch.exp(constraint_1 * constrain_2) # + 1 * torch.norm(y_pred, p=2)
